@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #=============================================================================
 #  MusE
 #  Linux Music Editor
@@ -31,5 +31,15 @@ fi
 cd build
 
 # to put the resulting binary in a specific location add -DCMAKE_INSTALL_PREFIX=<some location>
-cmake -DCMAKE_BUILD_TYPE=release -DMODULES_BUILD_STATIC=ON .. && make clean all && echo "Build was OK, now enter the 'build' dir and run 'make install' as root"
+cmake -DCMAKE_BUILD_TYPE=release -DMODULES_BUILD_STATIC=ON \
+  -DCMAKE_CXX_FLAGS="-I$(pkg-config --variable=libdir sigc++-2.0)/sigc++-2.0/include" \
+  -DGTK2_GTKMMCONFIG_INCLUDE_DIR=$(pkg-config --variable=libdir gtkmm-2.4)/gtkmm-2.4/include \
+  -DGTK2_GDKMMCONFIG_INCLUDE_DIR=$(pkg-config --variable=libdir gdkmm-2.4)/gdkmm-2.4/include \
+  -DGTK2_GLIBMMCONFIG_INCLUDE_DIR=$(pkg-config --variable=libdir glibmm-2.4)/glibmm-2.4/include \
+-DCMAKE_CXX_FLAGS="-I$(pkg-config --variable=libdir sigc++-2.0)/sigc++-2.0/include \
+  -I$(pkg-config --variable=libdir pangomm-1.4)/pangomm-1.4/include \
+  -I$(pkg-config --variable=libdir cairomm-1.0)/cairomm-1.0/include \
+  -I$(pkg-config --variable=libdir atkmm-1.6)/atkmm-1.6/include \
+  -I$(pkg-config --variable=libdir giomm-2.4)/giomm-2.4/include" \
+  .. && make all && echo "Build was OK, now enter the 'build' dir and run 'make install' as root"
 
