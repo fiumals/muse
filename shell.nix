@@ -1,5 +1,5 @@
 {
-  pkgs ? import <nixpkgs> { },
+  pkgs ? import <nixpkgs> { config.allowUnfree = true; },
 }:
 
 pkgs.mkShell {
@@ -38,6 +38,7 @@ pkgs.mkShell {
     sord
     serd
     lv2
+    vst2-sdk
     gtkmm2
     gtk2
     dssi

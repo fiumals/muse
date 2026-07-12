@@ -35,6 +35,7 @@ cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DMODULES_BUILD_STATIC=ON \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  -DCMAKE_INSTALL_PREFIX="$HOME/.local" \
   ..
 
 make -j$(nproc) all
