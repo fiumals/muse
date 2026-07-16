@@ -51,6 +51,9 @@
           python3Packages.pyqt5
           rtaudio
 
+          cairo
+          pango
+
           cairomm
           pangomm
           libsigcxx
