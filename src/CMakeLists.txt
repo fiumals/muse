@@ -21,6 +21,16 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #=============================================================================
 
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0)
+
+if (COMMAND cmake_policy)
+    cmake_policy(SET CMP0003 NEW)
+    cmake_policy (SET CMP0007 NEW)
+    # New behaviour is to normalize install() DESTINATION paths,
+    #  which might affect us. Don't allow for now. FIXME Fix the problem?
+    cmake_policy (SET CMP0177 OLD)
+endif(COMMAND cmake_policy)
+
 project(muse)
 
 include(FindPkgConfig)
@@ -63,12 +73,6 @@ if (CheckAtomic_Result STREQUAL "NOTFOUND")
   message("CheckAtomic module not found! Using local copy instead.")
   include(cmake/CheckAtomic.cmake)
 endif (CheckAtomic_Result STREQUAL "NOTFOUND")
-
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.2)
-if (COMMAND cmake_policy)
-    cmake_policy(SET CMP0003 NEW)
-    cmake_policy (SET CMP0007 NEW)
-endif(COMMAND cmake_policy)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -164,11 +168,11 @@ set(CMAKE_SKIP_RULE_DEPENDENCY TRUE)
 
 # The MusE version number.
 SET(MusE_VERSION_MAJOR 4)
-SET(MusE_VERSION_MINOR 0)
+SET(MusE_VERSION_MINOR 3)
 SET(MusE_VERSION_PATCH 0)
-SET(MusE_VERSION       "4.2.1")
-SET(MusE_VERSION_FULL  "4.2.1")
-SET(MusE_INSTALL_NAME  "muse-4.2")
+SET(MusE_VERSION       "4.3.0")
+SET(MusE_VERSION_FULL  "4.3.0")
+SET(MusE_INSTALL_NAME  "muse-4.3")
 SET(MusE_EXEC_NAME     "muse4")
 
 SET(MusE_BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin)
@@ -197,28 +201,56 @@ SET(MusE_SHARE_DIR ${SHARE_INSTALL_PREFIX}/${MusE_INSTALL_NAME})
 SET(MusE_LIB_DIR ${LIB_INSTALL_DIR}/${MusE_INSTALL_NAME})
 
 include(FindGit)
-if (GIT_FOUND)
-      EXEC_PROGRAM( ${GIT_EXECUTABLE}
-            ARGS "status"
-            OUTPUT_VARIABLE GIT_RET_NOTUSED
-            RETURN_VALUE IS_GIT_REPO )
-    if(IS_GIT_REPO EQUAL 0)
-        EXEC_PROGRAM( ${GIT_EXECUTABLE}
-            ARGS "log -1 --format='%ci'"
-            OUTPUT_VARIABLE MusE_GITDATE )
-        EXEC_PROGRAM( ${GIT_EXECUTABLE}
-            ARGS "rev-parse --abbrev-ref HEAD"
-            OUTPUT_VARIABLE MusE_GITBRANCH )
-        EXEC_PROGRAM( ${GIT_EXECUTABLE}
-            ARGS "describe --dirty --always"
-            OUTPUT_VARIABLE MusE_GITDESCRIBE )
+if (Git_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --is-inside-work-tree
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE IS_NOT_GIT_REPO
+        OUTPUT_QUIET
+        ERROR_QUIET
+    )
+
+    if(IS_NOT_GIT_REPO EQUAL 0)
+        # 1. Get the last commit date
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" log -1 --format=%ci
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE MusE_GITDATE
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+
+        # 2. Get the current branch name
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --abbrev-ref HEAD
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE MusE_GITBRANCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+
+        # 3. Get the description (tag/hash/dirty status)
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" describe --dirty --always
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE MusE_GITDESCRIBE
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
         SET(MusE_GITSTRING "${MusE_GITBRANCH} | ${MusE_GITDESCRIBE} | ${MusE_GITDATE}")
-    else (IS_GIT_REPO EQUAL 0)
-        SET(MusE_GITSTRING "")
-    endif (IS_GIT_REPO EQUAL 0)
-else (GIT_FOUND)
+    else ()
+        # Fallback for tarball/non-git builds
+        set(MusE_GITDATE "")
+        set(MusE_GITBRANCH "")
+        set(MusE_GITDESCRIBE "")
+        set(MusE_GITSTRING "")
+    endif ()
+else ()
+      set(MusE_GITDATE "")
+      set(MusE_GITBRANCH "")
+      set(MusE_GITDESCRIBE "")
       SET(MusE_GITSTRING "")
-endif (GIT_FOUND)
+endif ()
 
 
 option ( ENABLE_RTAUDIO      "Multi platform rtaudio audio compatibility fallback" ON)
@@ -308,7 +340,7 @@ find_package(Threads REQUIRED)
 ##
 
 
-set(QT_MIN_VERSION "5.9.5")
+set(QT_MIN_VERSION "5.10")
 set(QT_USE_QTXML TRUE)
 set(QT_USE_QTDESIGNER TRUE)
 set(QT_USE_QTSVG TRUE)
@@ -316,7 +348,7 @@ set(QT_USE_QTSVG TRUE)
 find_package(Qt5Widgets)
 
 if (NOT Qt5Widgets_FOUND)
-      message(FATAL_ERROR "Fatal error: QT (version >= 5.9.5) required.\n"
+      message(FATAL_ERROR "Fatal error: QT (version >= 5.10) required.\n"
       "Cmake tries to detect QT5 by searching for 'Qt5Widgets' package\n"
       "If you have QT5 installed, make sure 'Qt5Widgets' package is in PKG_CONFIG_PATH."
       )
@@ -488,13 +520,14 @@ endif (ENABLE_RTAUDIO)
 ##
 
 if (ENABLE_PYTHON)
-      include(FindPythonLibs)
-      if (PYTHONLIBS_FOUND)
-            if (NOT PYTHONLIBS_VERSION_STRING VERSION_LESS 3.5)
+      # CMake 3.12 required for 'Python'.
+      find_package(Python COMPONENTS Development)
+      if (Python_FOUND)
+            if (NOT Python_VERSION VERSION_LESS 3.5)
                   set(PYTHON_SUPPORT ON)
-            endif (NOT PYTHONLIBS_VERSION_STRING VERSION_LESS 3.5)
-      endif (PYTHONLIBS_FOUND)
-#  TODO Check for Pyro4?
+            endif (NOT Python_VERSION VERSION_LESS 3.5)
+      endif (Python_FOUND)
+#  TODO Check for Pyro5?
 endif (ENABLE_PYTHON)
 
 ##

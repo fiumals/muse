@@ -1,3 +1,37 @@
+02.11.2026
+    - Add StartupWMClass desktop file to desktop file. (Tim)
+      Call app.setDesktopFileName() in main.
+27.10.2026
+    - Fix unmoveable transport panel under Wayland. (Tim)
+26.10.2026
+    - Modernize some cmake files, fix cmake errors. (Tim)
+    - Modernize cmake search for Python. (Tim)
+    - Update translations.  (Tim)
+    - Add WORKING_DIRECTORY to git version extraction for out-of-source builds. (Tim)
+20.10.2026
+    - Fix large popup menus not splitting up correctly. (Tim)
+      I broke it recently with a popup menu rewrite.
+    - Removed unnecessary class PopupMenu's side-scrolling feature. (Tim)
+      Should not be needed since menu auto-breakup was added long ago.
+18.10.2026
+    *** MusE 4.3.0 ***
+16.10.2026
+    - Fix issue 1342: Project backup file never overwritten on save.
+    - Fix issue 1310: SimpleDrums samples with more than 2 channels broken.
+    - Fix issue 1102: Mangled wave file paths in .med when project dir is a symlink.
+      All three fixes by user brynnjocelyn. Thanks!  (Tim)
+    - A few compiler issues fixed. Unused variables etc.  (Tim)
+    - Improved (somewhat) audio stretching.
+05.09.2026
+    - Fixed class PopupMenu not working properly with multiple monitors. (Tim)
+      Menus were not being broken up due to usage of full virtual QDesktopWidget.
+      Menu title items were being shoved into sub menus. Now they are guaranteed
+       to occupy the top level menu.
+      Speed improved. Helps with very large menus.
+15.07.2026
+    * Upgraded: Pyro4 support removed and upgraded to full native Pyro5. (Tim)
+    - There was also a crash that has been fixed. We now get and release the GIL.
+    - Tested all *.py remote control examples OK.
 14.03.2026
     - Add 'New' button to note name list feature in Settings. (Tim)
 09.03.2026
